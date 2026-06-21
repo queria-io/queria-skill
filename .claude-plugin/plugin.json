@@ -1,0 +1,13 @@
+{
+  "name": "queria",
+  "displayName": "Queria Open Data",
+  "version": "0.1.0",
+  "description": "Explore and query Queria's public Japanese open data (data.queria.io) read-only: zipcode, corporate registry, e-Stat statistics, geospatial, real estate, and more, with cross-dataset joins.",
+  "author": {
+    "name": "flo8s"
+  },
+  "homepage": "https://queria.io",
+  "repository": "https://github.com/flo8s/queria-skill",
+  "license": "MIT",
+  "keywords": ["open-data", "japan", "duckdb", "ducklake", "sql", "data-exploration"]
+}
