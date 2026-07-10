@@ -1,8 +1,8 @@
 {
   "$schema": "https://code.claude.com/schemas/marketplace-schema.json",
-  "name": "flo8s",
+  "name": "queria-io",
   "owner": {
-    "name": "flo8s"
+    "name": "queria-io"
   },
   "description": "Queria open-data tools for Claude Code.",
   "plugins": [
@@ -12,10 +12,10 @@
       "description": "Explore and query Queria's public Japanese open data (data.queria.io) read-only, with cross-dataset joins.",
       "version": "0.1.0",
       "author": {
-        "name": "flo8s"
+        "name": "queria-io"
       },
       "homepage": "https://queria.io",
-      "repository": "https://github.com/flo8s/queria-skill",
+      "repository": "https://github.com/queria-io/queria-skill",
       "license": "MIT",
       "keywords": ["open-data", "japan", "duckdb", "ducklake", "sql"]
     }
