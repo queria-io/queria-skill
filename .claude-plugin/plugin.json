@@ -7,7 +7,7 @@
     "name": "queria-io"
   },
   "homepage": "https://queria.io",
-  "repository": "https://github.com/queria-io/queria-skill",
+  "repository": "https://github.com/queria-io/claude-plugin",
   "license": "MIT",
   "keywords": ["open-data", "japan", "duckdb", "ducklake", "sql", "data-exploration"]
 }
