@@ -1,16 +1,18 @@
 # Queria SQL レシピ集
 
-`python3 scripts/queria_query.py --sql "<query>"` で実行する。
+`uvx queria sql "<query>"` で実行する。
 テーブルは `データセット名.スキーマ.テーブル名` で参照。別データセットを参照すると自動アタッチされ、
 そのまま横断結合できる。整形済みデータは `mart_` 接頭辞を優先する。
 
 ## 発見・スキーマ把握
 
 ```bash
-python3 scripts/queria_query.py --list                 # データセット一覧
-python3 scripts/queria_query.py --search 不動産         # キーワード検索
-python3 scripts/queria_query.py --schema e_stat        # テーブル一覧
-python3 scripts/queria_query.py --columns reinfolib    # カラム（型・説明）
+uvx queria list                     # データセット一覧
+uvx queria search 不動産             # データセット・テーブル・カラムの横断検索
+uvx queria info reinfolib           # メタデータ（ライセンス・出典・スキーマ）
+uvx queria schema e_stat            # テーブル一覧
+uvx queria columns reinfolib        # カラム（型・説明）
+uvx queria summarize zipcode.main.mart_zipcode   # カラム統計（全件スキャン）
 ```
 
 任意テーブルのカラムを直接見る:
@@ -91,7 +93,7 @@ WHERE p.item_name = 'A1101_総人口'
 QUALIFY ROW_NUMBER() OVER (PARTITION BY p.area ORDER BY p.value DESC) = 1  -- 内訳の重複を排除
 ORDER BY population DESC LIMIT 20
 ```
-（結合キーは双方のコード桁数を `--columns` で確認して合わせる。e_stat の `area` は5桁、
+（結合キーは双方のコード桁数を `columns` で確認して合わせる。e_stat の `area` は5桁、
 lg_code は6桁の `lg_code` と5桁の `lg_code_5` がある）
 
 ## 地理: 国土数値情報（GIS）
@@ -102,7 +104,7 @@ SELECT prefecture_name, ST_Area(geometry) AS area
 FROM nlftp.boundary.prefecture
 ORDER BY area DESC LIMIT 10
 ```
-（座標系は緯度経度なので面積は度単位。相対比較や地図用途向け。列名は `--columns nlftp` で確認）
+（座標系は緯度経度なので面積は度単位。相対比較や地図用途向け。列名は `uvx queria columns nlftp` で確認）
 
 ## 不動産
 
@@ -111,16 +113,16 @@ SELECT prefecture, COUNT(*) AS deals, AVG(trade_price) AS avg_price
 FROM reinfolib.main.mart_trade_prices
 GROUP BY 1 ORDER BY deals DESC
 ```
-（実カラムは `--columns reinfolib` で確認）
+（実カラムは `uvx queria columns reinfolib` で確認）
 
 ## 他スキルへの受け渡し（可視化・分析・ダッシュボード）
 
 このスキルは可視化しない。結果を書き出して別スキルに渡す:
 ```bash
-python3 scripts/queria_query.py --out /tmp/pref_population.parquet --sql "
+uvx queria sql "
   SELECT area_name, value FROM e_stat.ssds.a_pref_population
   WHERE item_name='A1101_総人口' AND year=2024 AND area_name<>'全国'
-"
+" --out /tmp/pref_population.parquet
 ```
 書き出した CSV/Parquet を data:create-viz（チャート）/ data:analyze（分析）/
 data:build-dashboard・Tableau/PowerBI MCP（ダッシュボード）に渡す。
