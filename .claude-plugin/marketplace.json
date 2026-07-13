@@ -10,12 +10,12 @@
       "name": "queria",
       "source": ".",
       "description": "Explore and query Queria's public Japanese open data (data.queria.io) read-only, with cross-dataset joins.",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "author": {
         "name": "queria-io"
       },
       "homepage": "https://queria.io",
-      "repository": "https://github.com/queria-io/queria-skill",
+      "repository": "https://github.com/queria-io/claude-plugin",
       "license": "MIT",
       "keywords": ["open-data", "japan", "duckdb", "ducklake", "sql"]
     }

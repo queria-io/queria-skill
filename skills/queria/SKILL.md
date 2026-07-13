@@ -12,55 +12,41 @@ Queria は日本のオープンデータを DuckLake カタログとして公開
 `--out` で書き出して渡す。
 
 公開データなので認証不要・ローカルビルド不要。すべて read-only で安全に実行できる。
-
-## 利用できるデータ（2026 時点）
-
-| dataset | 内容 |
-|---|---|
-| zipcode | 全国郵便番号 |
-| houjin_bangou | 国税庁法人番号（約500万件） |
-| gbizinfo | gBizINFO 法人活動情報（補助金・調達・財務）。houjin_bangou と結合可 |
-| e_stat | e-Stat 政府統計 |
-| reinfolib | 不動産価格・地価（不動産情報ライブラリ） |
-| nlftp | 国土数値情報（GIS） |
-| address_br | アドレス・ベース・レジストリ（市区町村マスタ） |
-| lg_code | 全国地方公共団体コード |
-| calendar | 日本の暦（祝日・和暦・会計年度） |
-| tsukuba | つくば市オープンデータ |
-| articles | Queria ショーケース記事メタデータ |
-
-最新の一覧は必ず `--list` で取得すること（増えている可能性がある）。
+どんなデータセットがあるかは静的な一覧を持たず、常に `list` / `search` でカタログから取得する。
 
 ## 実行方法
 
-すべて 1 つのヘルパースクリプトで完結する。このスキルディレクトリからの相対パスで実行する:
+queria CLI（PyPI: `queria`）を使う。uv があればインストール不要:
 
 ```bash
-python3 scripts/queria_query.py <オプション>
+uvx queria list
 ```
 
-python3 さえあれば追加インストールは不要。初回のみ duckdb を専用ディレクトリ
-（`~/.cache/queria/`）へ自動インストールする（グローバル環境は汚さない）。2 回目以降は即実行。
+uv がない場合は `pip install queria` して `queria list`。
+uvx のキャッシュが古い場合は `uvx queria@latest list` で最新版を使う。
 
 ### コマンド一覧
 
-| オプション | 用途 |
+| コマンド | 用途 |
 |---|---|
-| `--list` | データセット一覧（発見の起点） |
-| `--search <キーワード>` | データセットをキーワード検索 |
-| `--schema <dataset>` | そのデータセットのテーブル一覧と説明 |
-| `--columns <dataset>` | そのデータセットの全カラム（型・説明付き） |
-| `--sql "<query>"` | read-only SQL を実行 |
+| `uvx queria list` | データセット一覧 |
+| `uvx queria search <キーワード>` | データセット・テーブル・カラムの横断検索（発見の起点）。`--type dataset\|table\|column` `--limit N` |
+| `uvx queria info <dataset>` | メタデータ（ライセンス・出典 URL・スキーマ・更新日時）。`--readme` で README 本文も |
+| `uvx queria schema <dataset>` | テーブル一覧と説明 |
+| `uvx queria columns <dataset> [table]` | カラム（型・説明付き） |
+| `uvx queria summarize <dataset>.<schema>.<table>` | カラム統計（件数・min/max・NULL 率）。全件スキャンなので大テーブル注意 |
+| `uvx queria sql "<query>"` | read-only SQL を実行 |
 | `--out <file.csv\|.parquet>` | 結果をファイルに書き出す（他スキルへの受け渡し用） |
-| `--format table\|csv\|json` | 標準出力の形式（既定 table、`--out` 指定時は無視） |
+| `--format table\|csv\|json\|jsonl\|markdown` | 標準出力の形式（既定 table、`--out` 指定時は無視） |
 
 ## 探索ワークフロー
 
-1. 発見: `python3 scripts/queria_query.py --list`（または `--search 不動産`）
-2. スキーマ把握: `python3 scripts/queria_query.py --schema reinfolib`
-3. カラム確認: `python3 scripts/queria_query.py --columns reinfolib`
-4. 取得: `python3 scripts/queria_query.py --sql "SELECT ... LIMIT 50"`
-5. 受け渡し: 可視化・分析が必要なら `--out result.parquet` で書き出し、別スキルに渡す
+1. 発見: `uvx queria search 人口`（何があるか分からなければ `uvx queria list`）
+2. 出典確認: `uvx queria info e_stat` — ライセンスと出典 URL をここで確認できる
+3. スキーマ把握: `uvx queria schema e_stat` → `uvx queria columns e_stat <table>`
+4. 中身の当たり: `uvx queria sql "SELECT ... LIMIT 20"`（分布を見たいときは `summarize`）
+5. 取得: `uvx queria sql "<query>"`
+6. 受け渡し: 可視化・分析が必要なら `--out result.parquet` で書き出し、別スキルに渡す
 
 ### SQL の書き方
 
@@ -77,7 +63,17 @@ JOIN lg_code.main.mart_lg_code g ON z.lg_code = g.lg_code
 GROUP BY 1, 2 ORDER BY zip_count DESC
 ```
 
-定番クエリは `references/sql-recipes.md`、データセット詳細は `references/datasets.md` を参照。
+### 定番の結合キー
+
+データセットを跨ぐ JOIN でよく使うキー（実際の桁数・列名は `columns` で確認する）:
+
+- `lg_code`: 全国地方公共団体コード。`lg_code.main.mart_lg_code` が結合ハブで、
+  6 桁の `lg_code` と 5 桁の `lg_code_5` を持つ。e-Stat の市区町村粒度テーブルの
+  `area`（5 桁）は `lg_code_5` と結合する
+- `corporate_number`: 法人番号。法人系データセット同士を結合する
+- `key_code`: 国勢調査小地域などの境界ポリゴンと統計値を結合する
+
+定番クエリは `references/sql-recipes.md` を参照。
 
 ## 可視化・分析・ダッシュボード（スコープ外）
 
@@ -89,9 +85,9 @@ GROUP BY 1, 2 ORDER BY zip_count DESC
 
 ## 制約
 
-- 公開データ（data.queria.io）のみ・read-only。書き込み系 SQL はスクリプトが拒否する。
-- duckdb は DuckLake v1（カタログ format 1.0）に対応する版（1.5.4+）にピンしている。
-  Queria 側のカタログ format が上がったら `scripts/queria_query.py` の `DUCKDB_SPEC` /
-  `MIN_DUCKDB` を更新すること。
+- 公開データ（data.queria.io）のみ・read-only。書き込み系 SQL は CLI が拒否する。
+- `summarize` と絞り込みのない SELECT はリモートデータの全件スキャンになる。
+  まず `LIMIT` 付きで当たりを付ける。
 - DuckDB CLI で DuckLake を直接 ATTACH しない（バージョン不整合でカタログが壊れる）。
-  必ずこのスクリプト（バージョン固定済みの Python duckdb）を経由する。
+  必ず queria CLI を経由する。カタログ format が更新された場合は CLI がエラーメッセージで
+  必要なアップグレードを案内する。

@@ -1,38 +1,37 @@
-# Queria Open Data skill
+# Queria Claude Code plugin
 
-Claude Code / エージェント向けのスキル。Queria が公開する日本のオープンデータ
+Queria 公式の Claude Code プラグイン。Queria が公開する日本のオープンデータ
 （data.queria.io）に read-only で接続し、データセットの発見・スキーマ把握・SQL 取得・
-横断結合を超簡単に行えるようにする。
+横断結合を行うスキルを提供する。
 
 郵便番号、国税庁法人番号、gBizINFO、e-Stat 政府統計、不動産価格、国土数値情報（GIS）、
 自治体コード、暦などを、別々のデータセットを跨いで JOIN しながら探索できる。
+利用できるデータセットの一覧は常にカタログから動的に取得する。
 
 可視化・統計分析・ダッシュボードはこのスキルのスコープ外。取得結果を CSV/Parquet に
 書き出し、data:create-viz / data:analyze / Tableau・PowerBI MCP などの別スキルに渡す。
 
 ## 必要なもの
 
-python3 のみ。初回実行時に duckdb を専用ディレクトリ（`~/.cache/queria/`）へ自動
-インストールするため、事前インストールやグローバル環境への影響はない。公開データなので
-認証も不要。
+[queria CLI](https://docs.queria.io/)（PyPI: `queria`）を使う。uv があれば
+`uvx queria` でインストール不要、なければ `pip install queria`（Python 3.10+）。
+公開データなので認証は不要。
 
 ## インストール
 
-プラグインとして:
-
 ```bash
-# ローカルディレクトリから（開発・お試し）
-claude --plugin-dir /path/to/queria-skill
-
-# マーケットプレイス経由（公開後）
-claude plugin install queria@<marketplace>
+claude plugin marketplace add queria-io/claude-plugin
+claude plugin install queria@queria-io
 ```
 
-単一スキルとして（手軽に試す）:
+ローカルディレクトリから試す場合:
 
 ```bash
-ln -s /path/to/queria-skill/skills/queria ~/.claude/skills/queria
+claude --plugin-dir /path/to/claude-plugin
 ```
+
+旧 `queria@flo8s`（リポジトリ名 queria-skill）からの移行は、マーケットプレイスを
+`queria-io/claude-plugin` で追加し直してからインストールする。
 
 ## 使い方
 
@@ -40,24 +39,26 @@ ln -s /path/to/queria-skill/skills/queria ~/.claude/skills/queria
 頼めばスキルが起動する。直接実行する場合:
 
 ```bash
-cd skills/queria
-python3 scripts/queria_query.py --list                  # データセット一覧
-python3 scripts/queria_query.py --schema e_stat         # テーブル一覧
-python3 scripts/queria_query.py --columns zipcode       # カラム一覧
-python3 scripts/queria_query.py --sql "SELECT ... LIMIT 50"
-python3 scripts/queria_query.py --out result.parquet --sql "..."   # 書き出し
+uvx queria list                              # データセット一覧
+uvx queria search 人口                        # データセット・テーブル・カラムの横断検索
+uvx queria info e_stat                       # メタデータ（ライセンス・出典など）
+uvx queria schema e_stat                     # テーブル一覧
+uvx queria columns zipcode                   # カラム一覧
+uvx queria sql "SELECT ... LIMIT 50"
+uvx queria sql "..." --out result.parquet    # 書き出し
 ```
 
-詳細は [skills/queria/SKILL.md](skills/queria/SKILL.md)、データセットは
-[references/datasets.md](skills/queria/references/datasets.md)、定番クエリは
+詳細は [skills/queria/SKILL.md](skills/queria/SKILL.md)、定番クエリは
 [references/sql-recipes.md](skills/queria/references/sql-recipes.md) を参照。
 
 ## 仕組み
 
-Queria は各データセットを DuckLake カタログとして公開している。スクリプトは Web 版と同じく
-DuckLake を read-only で ATTACH してクエリする。データセット一覧と全スキーマは `catalog`
-データセットの `mart_*` テーブルに統合されており、ここから発見する。
+Queria は各データセットを DuckLake カタログとして公開している。queria CLI が Web 版と
+同じく DuckLake を read-only で ATTACH してクエリする。データセット一覧と全スキーマは
+`catalog` データセットの `mart_*` テーブルに統合されており、`list` / `search` / `info` は
+ここから発見する。カタログ format と CLI の互換性は CLI 側が管理し、更新が必要な場合は
+エラーメッセージで案内される。
 
-公開カタログは DuckLake v1（format 1.0）。これを読める duckdb 1.5.4+ にピンしている。
-Queria 側のカタログ format が上がった場合は `scripts/queria_query.py` の `DUCKDB_SPEC` /
-`MIN_DUCKDB` を更新する。
+## License
+
+MIT
