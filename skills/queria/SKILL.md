@@ -11,7 +11,7 @@ Queria は日本のオープンデータを DuckLake カタログとして公開
 他スキル（data:create-viz, data:analyze, data:build-dashboard, Tableau/PowerBI MCP 等）に
 `--out` で書き出して渡す。
 
-公開データなので認証不要・ローカルビルド不要。すべて read-only で安全に実行できる。
+認証不要・ローカルビルド不要で、すべて read-only で安全に実行できる（匿名アクセスにはレートリミットがあり、上限に達したら https://docs.queria.io/connection/authentication の手順でトークンを設定できる）。
 どんなデータセットがあるかは静的な一覧を持たず、常に `list` / `search` でカタログから取得する。
 
 ## 実行方法

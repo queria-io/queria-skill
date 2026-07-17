@@ -1,0 +1,6 @@
+{
+  "name": "queria",
+  "version": "0.2.0",
+  "description": "Explore and query Queria's public Japanese open data (data.queria.io) read-only: zipcode, corporate registry, e-Stat statistics, geospatial, real estate, and more, with cross-dataset joins.",
+  "skills": "./skills/"
+}
