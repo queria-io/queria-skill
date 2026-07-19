@@ -1,60 +1,66 @@
 ---
 name: queria
-description: Queria の公開オープンデータ（data.queria.io）を探索・取得する。日本の郵便番号・法人番号・統計(e-Stat)・国土数値情報・不動産・暦・自治体コードなどを read-only SQL で横断検索できる。「Queria でデータを探す/使う」「オープンデータを調べたい」「日本の○○のデータが欲しい」「データセットを横断で結合したい」などのときに使用する。可視化・分析・ダッシュボードは別スキルに渡す。
+description: Explore and query Queria's public Japanese open data (data.queria.io) with read-only SQL. Covers postal codes (郵便番号), corporate numbers (法人番号), e-Stat government statistics (政府統計), national land numerical information (国土数値情報), real estate, calendars, municipality codes, and more, with cross-dataset joins. Use when asked to find or use data via Queria, explore Japanese open data (日本のオープンデータ), or join datasets across sources. Hands off visualization, analysis, and dashboards to other skills.
 ---
 
-# Queria オープンデータ探索
+# Queria Open Data Exploration
 
-Queria は日本のオープンデータを DuckLake カタログとして公開している（data.queria.io）。
-このスキルはそのカタログへ read-only で接続し、データセットの発見・スキーマ把握・SQL 取得・
-横断結合を行うためのもの。取得したデータの可視化・統計分析・ダッシュボード化はスコープ外で、
-他スキル（data:create-viz, data:analyze, data:build-dashboard, Tableau/PowerBI MCP 等）に
-`--out` で書き出して渡す。
+Queria publishes Japanese open data as DuckLake catalogs (data.queria.io).
+This skill connects to those catalogs read-only to discover datasets, inspect schemas,
+retrieve data with SQL, and join across datasets. Visualization, statistical analysis,
+and dashboards are out of scope — write results out with `--out` and hand them to other
+skills (data:create-viz, data:analyze, data:build-dashboard, Tableau/PowerBI MCP, etc.).
 
-認証不要・ローカルビルド不要で、すべて read-only で安全に実行できる（匿名アクセスにはレートリミットがあり、上限に達したら https://docs.queria.io/connection/authentication の手順でトークンを設定できる）。
-どんなデータセットがあるかは静的な一覧を持たず、常に `list` / `search` でカタログから取得する。
+No authentication or local build is required; everything runs read-only and is safe to
+execute (anonymous access is rate-limited; if you hit the limit, set up a token following
+https://docs.queria.io/connection/authentication).
+There is no static list of datasets — always discover them from the catalog with `list` / `search`.
 
-## 実行方法
+Most data values (place names, statistics categories, company names) are in Japanese.
+Search with Japanese keywords when possible; table and column names are in English.
 
-queria CLI（PyPI: `queria`）を使う。uv があればインストール不要:
+## How to run
+
+Use the queria CLI (PyPI: `queria`). With uv, no install is needed:
 
 ```bash
 uvx queria list
 ```
 
-uv がない場合は `pip install queria` して `queria list`。
-uvx のキャッシュが古い場合は `uvx queria@latest list` で最新版を使う。
+Without uv, `pip install queria` and run `queria list`.
+If the uvx cache is stale, run `uvx queria@latest list` to get the latest version.
 
-### コマンド一覧
+### Commands
 
-| コマンド | 用途 |
+| Command | Purpose |
 |---|---|
-| `uvx queria list` | データセット一覧 |
-| `uvx queria search <キーワード>` | データセット・テーブル・カラムの横断検索（発見の起点）。`--type dataset\|table\|column` `--limit N` |
-| `uvx queria info <dataset>` | メタデータ（ライセンス・出典 URL・スキーマ・更新日時）。`--readme` で README 本文も |
-| `uvx queria schema <dataset>` | テーブル一覧と説明 |
-| `uvx queria columns <dataset> [table]` | カラム（型・説明付き） |
-| `uvx queria summarize <dataset>.<schema>.<table>` | カラム統計（件数・min/max・NULL 率）。全件スキャンなので大テーブル注意 |
-| `uvx queria sql "<query>"` | read-only SQL を実行 |
-| `--out <file.csv\|.parquet>` | 結果をファイルに書き出す（他スキルへの受け渡し用） |
-| `--format table\|csv\|json\|jsonl\|markdown` | 標準出力の形式（既定 table、`--out` 指定時は無視） |
+| `uvx queria list` | List datasets |
+| `uvx queria search <keyword>` | Search across datasets, tables, and columns (start discovery here). `--type dataset\|table\|column` `--limit N` |
+| `uvx queria info <dataset>` | Metadata (license, source URL, schema, last updated). `--readme` includes the README body |
+| `uvx queria schema <dataset>` | List tables with descriptions |
+| `uvx queria columns <dataset> [table]` | Columns (with types and descriptions) |
+| `uvx queria summarize <dataset>.<schema>.<table>` | Column statistics (row count, min/max, NULL rate). Full scan — beware of large tables |
+| `uvx queria sql "<query>"` | Run read-only SQL |
+| `--out <file.csv\|.parquet>` | Write results to a file (for handing off to other skills) |
+| `--format table\|csv\|json\|jsonl\|markdown` | Stdout format (default: table; ignored when `--out` is given) |
 
-## 探索ワークフロー
+## Exploration workflow
 
-1. 発見: `uvx queria search 人口`（何があるか分からなければ `uvx queria list`）
-2. 出典確認: `uvx queria info e_stat` — ライセンスと出典 URL をここで確認できる
-3. スキーマ把握: `uvx queria schema e_stat` → `uvx queria columns e_stat <table>`
-4. 中身の当たり: `uvx queria sql "SELECT ... LIMIT 20"`（分布を見たいときは `summarize`）
-5. 取得: `uvx queria sql "<query>"`
-6. 受け渡し: 可視化・分析が必要なら `--out result.parquet` で書き出し、別スキルに渡す
+1. Discover: `uvx queria search 人口` ("population" — use Japanese keywords; run `uvx queria list` if unsure what exists)
+2. Check provenance: `uvx queria info e_stat` — license and source URL are shown here
+3. Understand the schema: `uvx queria schema e_stat` → `uvx queria columns e_stat <table>`
+4. Peek at the data: `uvx queria sql "SELECT ... LIMIT 20"` (use `summarize` to see distributions)
+5. Retrieve: `uvx queria sql "<query>"`
+6. Hand off: if visualization or analysis is needed, write out with `--out result.parquet` and pass it to another skill
 
-### SQL の書き方
+### Writing SQL
 
-テーブルは `データセット名.スキーマ.テーブル名` で参照する（例: `zipcode.main.mart_zipcode`）。
-各データセットは別カタログだが、複数を参照すれば自動でアタッチされ横断結合できる。
-分析向けの整形済みテーブルは `mart_` 接頭辞（`raw_` は生データ、`stg_` は中間）。
+Reference tables as `dataset.schema.table` (e.g. `zipcode.main.mart_zipcode`).
+Each dataset is a separate catalog, but referencing multiple datasets attaches them
+automatically so you can join across them.
+Analysis-ready tables use the `mart_` prefix (`raw_` is raw data, `stg_` is intermediate).
 
-横断結合の例（郵便番号 × 自治体コード）:
+Cross-dataset join example (postal codes x municipality codes):
 
 ```sql
 SELECT g.prefecture, g.city, COUNT(*) AS zip_count
@@ -63,31 +69,33 @@ JOIN lg_code.main.mart_lg_code g ON z.lg_code = g.lg_code
 GROUP BY 1, 2 ORDER BY zip_count DESC
 ```
 
-### 定番の結合キー
+### Common join keys
 
-データセットを跨ぐ JOIN でよく使うキー（実際の桁数・列名は `columns` で確認する）:
+Keys frequently used for joins across datasets (always verify actual digit counts and
+column names with `columns`):
 
-- `lg_code`: 全国地方公共団体コード。`lg_code.main.mart_lg_code` が結合ハブで、
-  6 桁の `lg_code` と 5 桁の `lg_code_5` を持つ。e-Stat の市区町村粒度テーブルの
-  `area`（5 桁）は `lg_code_5` と結合する
-- `corporate_number`: 法人番号。法人系データセット同士を結合する
-- `key_code`: 国勢調査小地域などの境界ポリゴンと統計値を結合する
+- `lg_code`: national local government code (全国地方公共団体コード, identifies
+  prefectures and municipalities). `lg_code.main.mart_lg_code` is the join hub, holding
+  the 6-digit `lg_code` and the 5-digit `lg_code_5`. The 5-digit `area` column in e-Stat
+  municipality-level tables joins to `lg_code_5`
+- `corporate_number`: corporate number (法人番号). Joins corporate datasets to each other
+- `key_code`: joins boundary polygons (e.g. census small areas) to statistics
 
-定番クエリは `references/sql-recipes.md` を参照。
+See `references/sql-recipes.md` for common queries.
 
-## 可視化・分析・ダッシュボード（スコープ外）
+## Visualization / analysis / dashboards (out of scope)
 
-このスキルは行わない。データ取得後、目的に応じて連携する:
+This skill does not do these. After retrieving data, hand off by purpose:
 
-- グラフ・チャート: 結果を `--out result.csv` で書き出し、data:create-viz / data:data-visualization に渡す
-- 統計分析・レポート: data:analyze / data:statistical-analysis に渡す
-- ダッシュボード: data:build-dashboard、または Tableau/PowerBI MCP に渡す
+- Charts and graphs: write results with `--out result.csv` and pass to data:create-viz / data:data-visualization
+- Statistical analysis and reports: pass to data:analyze / data:statistical-analysis
+- Dashboards: pass to data:build-dashboard, or Tableau/PowerBI MCP
 
-## 制約
+## Constraints
 
-- 公開データ（data.queria.io）のみ・read-only。書き込み系 SQL は CLI が拒否する。
-- `summarize` と絞り込みのない SELECT はリモートデータの全件スキャンになる。
-  まず `LIMIT` 付きで当たりを付ける。
-- DuckDB CLI で DuckLake を直接 ATTACH しない（バージョン不整合でカタログが壊れる）。
-  必ず queria CLI を経由する。カタログ format が更新された場合は CLI がエラーメッセージで
-  必要なアップグレードを案内する。
+- Public data (data.queria.io) only, read-only. The CLI rejects write SQL.
+- `summarize` and unfiltered SELECTs scan all remote data.
+  Probe with `LIMIT` first.
+- Never ATTACH DuckLake directly from the DuckDB CLI (version mismatch corrupts the
+  catalog). Always go through the queria CLI. If the catalog format has been updated,
+  the CLI error message explains the required upgrade.
