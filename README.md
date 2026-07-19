@@ -1,16 +1,18 @@
 # Queria Skills
 
-Queria が公開する日本のオープンデータ（[data.queria.io](https://queria.io)）を探索するための [Agent Skills](https://agentskills.io/) コレクション。データセットの発見・スキーマ把握・read-only SQL・横断結合を、対応エージェントから自然言語で行える。
+[日本語](README.ja.md)
 
-郵便番号、国税庁法人番号、gBizINFO、e-Stat 政府統計、不動産価格、国土数値情報（GIS）、自治体コード、暦などを、別々のデータセットを跨いで JOIN しながら探索できる。利用できるデータセットの一覧は常にカタログから動的に取得する。
+A collection of [Agent Skills](https://agentskills.io/) for exploring Queria's public Japanese open data ([data.queria.io](https://queria.io)). Discover datasets, inspect schemas, run read-only SQL, and join across datasets — all in natural language from any supported agent.
 
-## インストール
+Explore postal codes, NTA corporate numbers, gBizINFO, e-Stat government statistics, real estate prices, national land numerical information (GIS), municipality codes, calendars, and more, joining across independent datasets. The list of available datasets is always discovered dynamically from the catalog.
 
-Agent Skills 標準に対応したエージェント（Claude Code、OpenAI Codex、Cursor、OpenCode など）で利用できる。
+## Installation
+
+Works with agents that support the Agent Skills standard (Claude Code, OpenAI Codex, Cursor, OpenCode, and others).
 
 ### Claude Code
 
-[プラグインマーケットプレイス](https://code.claude.com/docs/en/discover-plugins)からインストールする:
+Install from the [plugin marketplace](https://code.claude.com/docs/en/discover-plugins):
 
 ```
 /plugin marketplace add queria-io/skills
@@ -19,7 +21,7 @@ Agent Skills 標準に対応したエージェント（Claude Code、OpenAI Code
 
 ### OpenAI Codex
 
-Codex CLI の[プラグイン](https://developers.openai.com/codex/plugins)としてインストールする:
+Install as a Codex CLI [plugin](https://developers.openai.com/codex/plugins):
 
 ```
 codex plugin marketplace add queria-io/skills
@@ -28,7 +30,7 @@ codex plugin add queria@queria-io
 
 ### npx skills
 
-[`npx skills`](https://skills.sh/) CLI で、その他の Agent Skills 対応エージェントにインストールする:
+Install into other Agent Skills-compatible agents with the [`npx skills`](https://skills.sh/) CLI:
 
 ```
 npx skills add queria-io/skills
@@ -36,7 +38,7 @@ npx skills add queria-io/skills
 
 ### Clone / Copy
 
-このリポジトリを clone して、スキルフォルダをエージェントのスキルディレクトリにコピーしてもよい:
+You can also clone this repository and copy the skill folder into your agent's skills directory:
 
 | Agent | Skill Directory | Docs |
 | --- | --- | --- |
@@ -50,23 +52,23 @@ npx skills add queria-io/skills
 
 | Skill | Useful for |
 | --- | --- |
-| queria | 日本のオープンデータの発見・スキーマ把握・read-only SQL・横断結合・CSV/Parquet 書き出し |
+| queria | Discovering Japanese open data, inspecting schemas, read-only SQL, cross-dataset joins, CSV/Parquet export |
 
-スキルの本体は [skills/queria/SKILL.md](skills/queria/SKILL.md)、定番クエリは [references/sql-recipes.md](skills/queria/references/sql-recipes.md) を参照。
+The skill itself lives in [skills/queria/SKILL.md](skills/queria/SKILL.md); common queries are in [references/sql-recipes.md](skills/queria/references/sql-recipes.md).
 
-可視化・統計分析・ダッシュボードはスコープ外。取得結果を CSV/Parquet に書き出し、可視化・分析用の別スキルや BI ツールに渡す。
+Visualization, statistical analysis, and dashboards are out of scope. Export results to CSV/Parquet and hand them to visualization/analysis skills or BI tools.
 
-## 必要なもの
+## Requirements
 
-[queria CLI](https://docs.queria.io/)（PyPI: `queria`）を使う。uv があれば `uvx queria` でインストール不要、なければ `pip install queria`（Python 3.10+）。認証は不要（匿名アクセスには[レートリミット](https://docs.queria.io/connection/authentication)がある）。
+Uses the [queria CLI](https://docs.queria.io/) (PyPI: `queria`). With uv, `uvx queria` needs no install; otherwise `pip install queria` (Python 3.10+). No authentication required (anonymous access is [rate-limited](https://docs.queria.io/connection/authentication)).
 
-## シェルの無い環境（MCP）
+## Environments without a shell (MCP)
 
-Claude Desktop など、エージェントがシェルを使えない MCP クライアントからはスキルの代わりに [MCP サーバー](https://docs.queria.io/mcp)（`uvx --from 'queria[mcp]' queria mcp`）を使う。
+From MCP clients where the agent has no shell (e.g. Claude Desktop), use the [MCP server](https://docs.queria.io/mcp) (`uvx --from 'queria[mcp]' queria mcp`) instead of the skill.
 
-## 仕組み
+## How it works
 
-Queria は各データセットを DuckLake カタログとして公開している。queria CLI が Web 版と同じく DuckLake を read-only で ATTACH してクエリする。データセット一覧と全スキーマは `catalog` データセットの `mart_*` テーブルに統合されており、`list` / `search` / `info` はここから発見する。カタログ format と CLI の互換性は CLI 側が管理し、更新が必要な場合はエラーメッセージで案内される。
+Queria publishes each dataset as a DuckLake catalog. The queria CLI ATTACHes DuckLake read-only and queries it, just like the web app. The dataset list and all schemas are consolidated into `mart_*` tables in the `catalog` dataset, which `list` / `search` / `info` use for discovery. Compatibility between the catalog format and the CLI is managed by the CLI, which reports required upgrades in its error messages.
 
 ## License
 
